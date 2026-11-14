@@ -8,6 +8,7 @@ import { PlayerDossierView } from './components/PlayerDossierView';
 import { RankLadderView } from './components/RankLadderView';
 import { TopNav, type AppTab } from './components/TopNav';
 import { WinRateCalculatorView } from './components/WinRateCalculatorView';
+import { WinPredictorView } from './components/WinPredictorView';
 import { SAMPLE_PLAYER_DOSSIER, type PlayerDossierData } from './data/samplePlayer';
 import {
   fetchAcademyRanks,
@@ -27,11 +28,13 @@ import {
 import type {
   DaysFilter,
   EquipmentRecord,
+  FavoriteHeroLineup,
   HeroPositionRecord,
   HeroRankRecord,
   RankFilter,
   RankRecord,
 } from './types/mlbb';
+import { loadSavedLineupsFromStorage } from './utils/favoriteLineup';
 import { extractHeroPositionMap } from './utils/mlbb';
 
 const JWT_STORAGE_KEY = 'dawnsight_mlbb_jwt';
@@ -93,6 +96,15 @@ export default function App() {
 
   // Hero Deep-Dive Drawer
   const [selectedHeroId, setSelectedHeroId] = useState<number | null>(null);
+  const [savedLineups] = useState<FavoriteHeroLineup[]>(() => loadSavedLineupsFromStorage());
+  const [predictorAllySlots, setPredictorAllySlots] = useState<Array<number | null>>([null, null, null, null, null]);
+  const [predictorEnemySlots, setPredictorEnemySlots] = useState<Array<number | null>>([null, null, null, null, null]);
+
+  function handlePredictFromLineup(heroIds: number[]) {
+    const next = [0, 1, 2, 3, 4].map((index) => heroIds[index] ?? null);
+    setPredictorAllySlots(next);
+    setActiveTab('predictor');
+  }
 
   const refreshPublicData = useCallback(async () => {
     const [versionResult, positionsResult, ranksResult, equipmentResult] = await Promise.allSettled([
@@ -487,6 +499,21 @@ export default function App() {
         )}
 
         {activeTab === 'calculator' && <WinRateCalculatorView />}
+
+        {activeTab === 'predictor' && (
+          <WinPredictorView
+            allyHeroIds={predictorAllySlots}
+            enemyHeroIds={predictorEnemySlots}
+            onChangeAllyHeroIds={setPredictorAllySlots}
+            onChangeEnemyHeroIds={setPredictorEnemySlots}
+            savedLineups={savedLineups}
+            heroRanks={heroRanks}
+            heroRanksLoading={heroRanksLoading}
+            positionMap={positionMap}
+            heroNameMap={heroNameMap}
+            onOpenHero={setSelectedHeroId}
+          />
+        )}
       </main>
 
       <footer className="border-t border-slate-800/70 py-6 px-4 sm:px-6 text-xs text-slate-500">
