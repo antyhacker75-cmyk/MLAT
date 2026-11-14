@@ -161,7 +161,7 @@ export function AccountSearchSection({
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span>Mobile Legends: Bang Bang</span>
                 <span aria-hidden="true">·</span>
-                <span>Rone Arena Data</span>
+                <span>Live Game Data</span>
                 {gameVersion && (
                   <>
                     <span aria-hidden="true">·</span>
@@ -178,7 +178,7 @@ export function AccountSearchSection({
 
               <p className="text-sm sm:text-base text-slate-300 max-w-xl leading-relaxed">
                 Look up verified career win rates, Mythic star progression, season match logs,
-                frequent hero MMR, and duo squad synergy directly from Rone Arena.
+                frequent hero MMR, and duo squad synergy using live game data.
               </p>
             </div>
 
