@@ -100,11 +100,6 @@ export default function App() {
   const [predictorAllySlots, setPredictorAllySlots] = useState<Array<number | null>>([null, null, null, null, null]);
   const [predictorEnemySlots, setPredictorEnemySlots] = useState<Array<number | null>>([null, null, null, null, null]);
 
-  function handlePredictFromLineup(heroIds: number[]) {
-    const next = [0, 1, 2, 3, 4].map((index) => heroIds[index] ?? null);
-    setPredictorAllySlots(next);
-    setActiveTab('predictor');
-  }
 
   const refreshPublicData = useCallback(async () => {
     const [versionResult, positionsResult, ranksResult, equipmentResult] = await Promise.allSettled([
