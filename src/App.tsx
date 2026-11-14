@@ -7,7 +7,6 @@ import { ItemCounterView } from './components/ItemCounterView';
 import { PlayerDossierView } from './components/PlayerDossierView';
 import { RankLadderView } from './components/RankLadderView';
 import { TopNav, type AppTab } from './components/TopNav';
-import { WinRateCalculatorView } from './components/WinRateCalculatorView';
 import { WinPredictorView } from './components/WinPredictorView';
 import { SAMPLE_PLAYER_DOSSIER, type PlayerDossierData } from './data/samplePlayer';
 import {
@@ -96,9 +95,24 @@ export default function App() {
 
   // Hero Deep-Dive Drawer
   const [selectedHeroId, setSelectedHeroId] = useState<number | null>(null);
+  // Shared team composition and Win Predictor state (same flow as mllll).
   const [savedLineups] = useState<FavoriteHeroLineup[]>(() => loadSavedLineupsFromStorage());
-  const [predictorAllySlots, setPredictorAllySlots] = useState<Array<number | null>>([null, null, null, null, null]);
-  const [predictorEnemySlots, setPredictorEnemySlots] = useState<Array<number | null>>([null, null, null, null, null]);
+  const [predictorAllySlots, setPredictorAllySlots] = useState<Array<number | null>>([
+    null, null, null, null, null,
+  ]);
+  const [predictorEnemySlots, setPredictorEnemySlots] = useState<Array<number | null>>([
+    null, null, null, null, null,
+  ]);
+
+  function toFiveSlots(ids: number[]): Array<number | null> {
+    return [0, 1, 2, 3, 4].map((idx) => ids[idx] ?? null);
+  }
+
+  function handleSendDraftToPredictor(allyIds: number[], enemyIds: number[]) {
+    setPredictorAllySlots(toFiveSlots(allyIds));
+    setPredictorEnemySlots(toFiveSlots(enemyIds));
+    setActiveTab('calculator');
+  }
 
 
   const refreshPublicData = useCallback(async () => {
@@ -477,6 +491,7 @@ export default function App() {
             heroNameMap={heroNameMap}
             equipmentList={equipmentList}
             equipmentLoading={equipmentLoading}
+            onSendToPredictor={handleSendDraftToPredictor}
           />
         )}
 
@@ -493,9 +508,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'calculator' && <WinRateCalculatorView />}
-
-        {activeTab === 'predictor' && (
+        {activeTab === 'calculator' && (
           <WinPredictorView
             allyHeroIds={predictorAllySlots}
             enemyHeroIds={predictorEnemySlots}
