@@ -198,7 +198,7 @@ export function WinRateCalculatorView() {
                 Enter your match count and win-rate goal
               </div>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Click Calculate Required Wins or pick a preset to query Rone Arena's live win-rate projection endpoint.
+                Click Calculate Required Wins or pick a preset to calculate a live win-rate projection.
               </p>
             </div>
           )}
