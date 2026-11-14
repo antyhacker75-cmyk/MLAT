@@ -6,8 +6,7 @@ interface Env {
 }
 
 const RONE_API_BASE = 'https://arena.rone.dev/api';
-const publicCache = new Map<string, { expiresAt: number; response: Response }>();
-const CACHE_MS = 120_000;
+const PUBLIC_CACHE_TTL_SECONDS = 60;
 
 function json(body: unknown, status = 200) {
   return Response.json(body, {
@@ -48,8 +47,12 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
     target.search = url.search;
     const cacheable = request.method === 'GET' &&
       (subPath.startsWith('/heroes') || subPath.startsWith('/academy'));
-    const cached = cacheable ? publicCache.get(target.toString()) : undefined;
-    if (cached && cached.expiresAt > Date.now()) return cached.response.clone();
+    const cache = caches.default;
+    const cacheKey = new Request(target.toString(), { method: 'GET' });
+    if (cacheable) {
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+    }
 
     const headers = new Headers({ Accept: 'application/json' });
     const authorization = request.headers.get('Authorization');
@@ -78,9 +81,18 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       try { data = JSON.parse(raw); } catch {
         return json({ code: 502, message: 'Upstream API returned invalid JSON.' }, 502);
       }
-      const response = json(data, upstream.status);
+      const responseHeaders = new Headers({
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': cacheable && upstream.ok
+          ? 'public, max-age=0, s-maxage=' + PUBLIC_CACHE_TTL_SECONDS + ', stale-while-revalidate=300'
+          : 'no-store',
+      });
+      const response = new Response(JSON.stringify(data), {
+        status: upstream.status,
+        headers: responseHeaders,
+      });
       if (cacheable && upstream.ok) {
-        publicCache.set(target.toString(), { expiresAt: Date.now() + CACHE_MS, response: response.clone() });
+        await cache.put(cacheKey, response.clone());
       }
       return response;
     } catch (error) {
