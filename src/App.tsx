@@ -43,7 +43,7 @@ function readPublicCache<T>(key: string): T | null {
     const raw = localStorage.getItem(PUBLIC_CACHE_PREFIX + key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { savedAt: number; data: T };
-    if (!parsed || !Array.isArray(parsed.data) && typeof parsed.data !== 'object') return null;
+    if (!parsed || typeof parsed.savedAt !== 'number' || parsed.data === undefined) return null;
     if (Date.now() - parsed.savedAt > 24 * 60 * 60 * 1000) return null;
     return parsed.data;
   } catch {
