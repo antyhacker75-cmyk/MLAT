@@ -1,4 +1,4 @@
-export type AppTab = 'account' | 'heroes' | 'counter' | 'ranks' | 'calculator';
+export type AppTab = 'account' | 'heroes' | 'counter' | 'ranks' | 'calculator' | 'predictor';
 
 interface TopNavProps {
   activeTab: AppTab;
@@ -14,6 +14,7 @@ const NAV_ITEMS: Array<{ id: AppTab; label: string; mobileLabel: string }> = [
   { id: 'counter', label: 'Item Counter', mobileLabel: 'Counter' },
   { id: 'ranks', label: 'Rank Ladder', mobileLabel: 'Ranks' },
   { id: 'calculator', label: 'WR Calculator', mobileLabel: 'WR Calc' },
+  { id: 'predictor', label: 'Win Predictor', mobileLabel: 'Predict' },
 ];
 
 export function TopNav({
@@ -87,7 +88,7 @@ export function TopNav({
       {/* Compact mobile navigation row */}
       <nav
         aria-label="Mobile navigation"
-        className="md:hidden border-t border-slate-800/70 px-1 grid grid-cols-5"
+        className="md:hidden border-t border-slate-800/70 px-1 grid grid-cols-6"
       >
         {NAV_ITEMS.map((item) => {
           const isActive = activeTab === item.id;
