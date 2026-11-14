@@ -36,7 +36,8 @@ import type {
 import { loadSavedLineupsFromStorage } from './utils/favoriteLineup';
 import { extractHeroPositionMap } from './utils/mlbb';
 
-const JWT_STORAGE_KEY = 'dawnsight_mlbb_jwt';
+const JWT_STORAGE_KEY = 'mlat_mlbb_jwt';
+const LEGACY_JWT_STORAGE_KEY = 'dawnsight_mlbb_jwt';
 const PUBLIC_CACHE_PREFIX = 'mlat_public_v1_';
 const PUBLIC_CACHE_TTL = 5 * 60 * 1000;
 
@@ -84,7 +85,7 @@ export default function App() {
   // Player Account Dossier State
   const [jwt, setJwt] = useState<string | null>(() => {
     try {
-      return sessionStorage.getItem(JWT_STORAGE_KEY);
+      return sessionStorage.getItem(JWT_STORAGE_KEY) || sessionStorage.getItem(LEGACY_JWT_STORAGE_KEY);
     } catch {
       return null;
     }
@@ -404,7 +405,7 @@ export default function App() {
                         Top Mythic Meta Performers
                       </h2>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Live 7-day win rate leaders from Rone Arena. Click any hero to inspect skills and counters.
+                        Live 7-day win rate leaders. Click any hero to inspect skills and counters.
                       </p>
                     </div>
                     <button
@@ -526,8 +527,7 @@ export default function App() {
 
       <footer className="border-t border-slate-800/70 py-6 px-4 sm:px-6 text-xs text-slate-500">
         <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>DawnSight · Mobile Legends: Bang Bang Analytics</span>
-          <span>Data powered by Rone Arena API</span>
+          <span>MLAT · Mobile Legends Academy Tools</span>
         </div>
       </footer>
 
