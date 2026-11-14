@@ -34,6 +34,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   const payload = await res.json().catch(() => null);
+
+  // Never let a successful-but-empty HTTP response reach callers as null.
+  // Callers consume the API envelope through res.data, so returning null here
+  // would cause "Cannot read properties of null (reading 'data')".
+  if (payload === null || payload === undefined) {
+    throw new Error("API returned an empty response (" + res.status + ")");
+  }
+
   if (!res.ok) {
     const msg =
       payload?.detail?.[0]?.msg ||
