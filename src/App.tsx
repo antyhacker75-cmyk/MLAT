@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountSearchSection } from './components/AccountSearchSection';
 import { SafeImage } from './components/SafeImage';
 import { HeroDetailDrawer } from './components/HeroDetailDrawer';
@@ -68,8 +68,9 @@ export default function App() {
   // Public Meta & Reference Data
   const [rankFilter, setRankFilter] = useState<RankFilter>('mythic');
   const [daysFilter, setDaysFilter] = useState<DaysFilter>('7');
-  const [heroRanks, setHeroRanks] = useState<HeroRankRecord[]>(() => readPublicCache<HeroRankRecord[]>('heroRanks') || []);
-  const [heroRanksLoading, setHeroRanksLoading] = useState(() => !readPublicCache<HeroRankRecord[]>('heroRanks'));
+  const [heroRanks, setHeroRanks] = useState<HeroRankRecord[]>(() => readPublicCache<HeroRankRecord[]>('heroRanks_7_mythic') || []);
+  const [heroRanksLoading, setHeroRanksLoading] = useState(() => !readPublicCache<HeroRankRecord[]>('heroRanks_7_mythic'));
+  const heroRanksRequestId = useRef(0);
   const [heroRanksError, setHeroRanksError] = useState<string | null>(null);
 
   const [positions, setPositions] = useState<HeroPositionRecord[]>(() => readPublicCache<HeroPositionRecord[]>('positions') || []);
@@ -138,7 +139,18 @@ export default function App() {
     };
   }, [refreshPublicData]);
   const loadHeroRanks = useCallback(() => {
-    if (heroRanks.length === 0) setHeroRanksLoading(true);
+    const cacheKey = 'heroRanks_' + daysFilter + '_' + rankFilter;
+    const cachedRecords = readPublicCache<HeroRankRecord[]>(cacheKey);
+    const requestId = ++heroRanksRequestId.current;
+
+    // Show the selected filter's cached data immediately while refreshing quietly.
+    if (cachedRecords && cachedRecords.length > 0) {
+      setHeroRanks(cachedRecords);
+      setHeroRanksLoading(false);
+    } else {
+      setHeroRanksLoading(true);
+    }
+
     setHeroRanksError(null);
     fetchHeroRanks({
       days: daysFilter,
@@ -148,20 +160,36 @@ export default function App() {
       size: 150,
     })
       .then((res) => {
+        if (requestId !== heroRanksRequestId.current) return;
         if (res.records.length > 0) {
           setHeroRanks(res.records);
-          writePublicCache('heroRanks_' + daysFilter + '_' + rankFilter, res.records);
+          writePublicCache(cacheKey, res.records);
           writePublicCache('heroRanks', res.records);
         }
       })
-      .catch((err) =>
-        setHeroRanksError(err instanceof Error ? err.message : 'Unable to fetch hero meta.'),
-      )
-      .finally(() => setHeroRanksLoading(false));
-  }, [daysFilter, rankFilter, heroRanks.length]);
+      .catch((err) => {
+        if (requestId === heroRanksRequestId.current) {
+          setHeroRanksError(err instanceof Error ? err.message : 'Unable to fetch hero meta.');
+        }
+      })
+      .finally(() => {
+        if (requestId === heroRanksRequestId.current) setHeroRanksLoading(false);
+      });
+  }, [daysFilter, rankFilter]);
 
   useEffect(() => {
     loadHeroRanks();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') loadHeroRanks();
+    }, 90_000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadHeroRanks();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [loadHeroRanks]);
 
   // Hydrate authenticated player dossier if JWT exists
