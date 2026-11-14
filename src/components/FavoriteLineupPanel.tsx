@@ -444,7 +444,7 @@ export function FavoriteLineupPanel({
             >
               {heroRanksLoading && roster.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
-                  Loading live hero win rates from Rone Arena...
+                  Loading live hero win rates...
                 </div>
               ) : filteredRoster.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
