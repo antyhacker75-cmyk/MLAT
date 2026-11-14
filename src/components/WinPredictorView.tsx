@@ -366,7 +366,7 @@ export function WinPredictorView({
           </h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
             {mode === 'predictor'
-              ? 'Compare your selected team composition against an opponent lineup using live Rone Arena win rates, direct hero counters, kit synergy, and role balance.'
+              ? 'Compare your selected team composition against an opponent lineup using live hero win rates, direct hero counters, kit synergy, and role balance.'
               : 'Calculate how many consecutive wins without a loss are required to reach your target hero or account win rate.'}
           </p>
         </div>
