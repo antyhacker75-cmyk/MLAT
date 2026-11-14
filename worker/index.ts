@@ -178,7 +178,7 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
         (error.name === 'TimeoutError' || error.name === 'AbortError');
       return json({
         code: timeout ? 504 : 502,
-        message: timeout ? 'Rone Arena API request timed out. Please try again.' : 'Unable to reach Rone Arena API.',
+        message: timeout ? 'Game data service timed out. Please try again.' : 'Unable to reach game data service.',
       }, timeout ? 504 : 502);
     }
   }
