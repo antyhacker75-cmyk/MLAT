@@ -456,7 +456,7 @@ export function ItemCounterView({
             Select heroes above to generate counter-item recommendations
           </h3>
           <p className="text-sm text-slate-400 max-w-lg mx-auto">
-            Pick your hero, your allied team, and up to 5 enemy threats to see targeted Anti-Heal, Sustain, Damage, and Defense items backed by Rone Arena equipment data.
+            Pick your hero, your allied team, and up to 5 enemy threats to see targeted Anti-Heal, Sustain, Damage, and Defense items using live equipment data.
           </p>
         </div>
       ) : (
@@ -548,7 +548,7 @@ export function ItemCounterView({
                   </h2>
                 </div>
                 <span className="text-xs text-slate-400">
-                  Live win-rate synergy partners from Rone Arena
+                  Live win-rate synergy partners
                 </span>
               </div>
 
