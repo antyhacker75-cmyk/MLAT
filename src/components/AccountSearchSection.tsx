@@ -2,31 +2,45 @@ import { useMemo, useState, FormEvent } from 'react';
 import { ArrowRight, KeyRound, Search, UserCheck, Users } from 'lucide-react';
 import { PLAYER_DIRECTORY } from '../data/playerDirectory';
 import type { PlayerDossierData } from '../data/samplePlayer';
-import type { RankRecord } from '../types/mlbb';
-import { formatWinRate, resolveRankFromLevel, validateAccountCredentials } from '../utils/mlbb';
+import type { HeroRankRecord, RankRecord } from '../types/mlbb';
+import {
+  type HeroMetadataSummary,
+  formatWinRate,
+  resolveRankFromLevel,
+  validateAccountCredentials,
+} from '../utils/mlbb';
 import { searchPlayerDirectory } from '../utils/playerSearch';
+import { FavoriteLineupPanel } from './FavoriteLineupPanel';
 import { SafeImage } from './SafeImage';
 
 interface AccountSearchSectionProps {
   gameVersion: string | null;
   rankRecords: RankRecord[];
   heroHeadMap: Map<number, string>;
+  heroRanks: HeroRankRecord[];
+  heroRanksLoading: boolean;
+  positionMap: Map<number, HeroMetadataSummary>;
   onSendCode: (roleId: number, zoneId: number) => Promise<void>;
   onLogin: (roleId: number, zoneId: number, vc: number) => Promise<void>;
   onLoadSample: () => void;
   onSelectDossier: (dossier: PlayerDossierData) => void;
   onExploreMeta: () => void;
+  onOpenHero: (heroId: number) => void;
 }
 
 export function AccountSearchSection({
   gameVersion,
   rankRecords,
   heroHeadMap,
+  heroRanks,
+  heroRanksLoading,
+  positionMap,
   onSendCode,
   onLogin,
   onLoadSample,
   onSelectDossier,
   onExploreMeta,
+  onOpenHero,
 }: AccountSearchSectionProps) {
   const [roleId, setRoleId] = useState('');
   const [zoneId, setZoneId] = useState('');
@@ -473,6 +487,13 @@ export function AccountSearchSection({
           </div>
         )}
       </section>
+
+      <FavoriteLineupPanel
+        heroRanks={heroRanks}
+        heroRanksLoading={heroRanksLoading}
+        positionMap={positionMap}
+        onOpenHero={onOpenHero}
+      />
     </div>
   );
 }

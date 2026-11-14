@@ -286,11 +286,15 @@ export default function App() {
                   gameVersion={gameVersion}
                   rankRecords={rankRecords}
                   heroHeadMap={heroHeadMap}
+                  heroRanks={heroRanks}
+                  heroRanksLoading={heroRanksLoading}
+                  positionMap={positionMap}
                   onSendCode={handleSendCode}
                   onLogin={handleLogin}
                   onLoadSample={handleLoadSample}
                   onSelectDossier={handleSelectDossier}
                   onExploreMeta={() => setActiveTab('heroes')}
+                  onOpenHero={setSelectedHeroId}
                 />
 
                 {/* Top Meta Snapshot right below the Account Search hero */}

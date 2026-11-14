@@ -384,3 +384,73 @@ export interface TeamComboRecommendation {
   alreadyInTeam: boolean;
 }
 
+export interface HeroBaseStatsProfile {
+  baseHp: number;
+  hpGrowth: number;
+  basePhysAtk: number;
+  physAtkGrowth: number;
+  basePhysDef: number;
+  physDefGrowth: number;
+  baseMagicDef: number;
+  magicDefGrowth: number;
+  moveSpeed: number;
+  baseAtkSpeed: number;
+  atkSpeedGrowthPct: number;
+  source: 'catalog' | 'role-calibrated';
+}
+
+export interface HeroSkillUtilitySlot {
+  slotLabel: string;
+  name: string;
+  icon: string;
+  cooldownSec: number | null;
+  cooldownText: string;
+  costText: string;
+  tags: string[];
+  summary: string;
+}
+
+export interface SkillUtilitySummary {
+  slots: HeroSkillUtilitySlot[];
+  utilityCounts: {
+    cc: number;
+    mobility: number;
+    sustain: number;
+    burst: number;
+    buff: number;
+  };
+  avgActiveCdSec: number | null;
+  ultCdSec: number | null;
+}
+
+export interface FavoriteLineupHero {
+  heroId: number;
+  name: string;
+  head: string;
+  roles: string[];
+  lanes: string[];
+  winRatePct: number | null;
+  pickRatePct: number | null;
+  banRatePct: number | null;
+}
+
+export interface FavoriteHeroLineup {
+  id: string;
+  name: string;
+  heroIds: number[];
+  snapshotHeroes: FavoriteLineupHero[];
+  savedAt: string;
+}
+
+export interface LineupWinRateSummary {
+  heroCount: number;
+  ratedHeroCount: number;
+  averageWinRatePct: number | null;
+  averagePickRatePct: number | null;
+  averageBanRatePct: number | null;
+  deltaFromFiftyPct: number | null;
+  highestWrHero: { heroId: number; name: string; winRatePct: number } | null;
+  lowestWrHero: { heroId: number; name: string; winRatePct: number } | null;
+  roleCoverage: string[];
+}
+

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { ArrowLeftRight, Search, X } from 'lucide-react';
 import {
   fetchHeroCompatibility,
   fetchHeroCounters,
@@ -10,9 +10,11 @@ import type {
   HeroDetailRecord,
   HeroRankRecord,
   RankFilter,
+  RoleFilter,
 } from '../types/mlbb';
 import { buildHeroMatchupPayload } from '../utils/heroMatchup';
 import { formatPercent, stripHtmlTags, type HeroMetadataSummary } from '../utils/mlbb';
+import { HeroComparePanel } from './HeroComparePanel';
 import { MatchupAnalysisSection } from './MatchupAnalysisSection';
 import { ProTipsTab } from './ProTipsTab';
 import { SafeImage } from './SafeImage';
@@ -29,6 +31,16 @@ interface HeroDetailDrawerProps {
 }
 
 const ABILITY_LABELS = ['Durability', 'Offense', 'Control', 'Difficulty'];
+
+const COMPARE_ROLES: Array<{ id: RoleFilter; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'tank', label: 'Tank' },
+  { id: 'fighter', label: 'Fighter' },
+  { id: 'assassin', label: 'Assassin' },
+  { id: 'mage', label: 'Mage' },
+  { id: 'marksman', label: 'Marksman' },
+  { id: 'support', label: 'Support' },
+];
 
 export function HeroDetailDrawer({
   heroId,
@@ -47,10 +59,23 @@ export function HeroDetailDrawer({
   const [error, setError] = useState<string | null>(null);
   const [drawerTab, setDrawerTab] = useState<'overview' | 'pro-tips'>('overview');
 
+  // Compare state
+  const [compareMode, setCompareMode] = useState<'off' | 'picking' | 'comparing'>('off');
+  const [compareHeroId, setCompareHeroId] = useState<number | null>(null);
+  const [compareDetail, setCompareDetail] = useState<HeroDetailRecord | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+  const [compareQuery, setCompareQuery] = useState('');
+  const [compareRole, setCompareRole] = useState<RoleFilter>('all');
+
   useEffect(() => {
-    if (!heroId) {
-      setDrawerTab('overview');
-    }
+    setDrawerTab('overview');
+    setCompareMode('off');
+    setCompareHeroId(null);
+    setCompareDetail(null);
+    setCompareError(null);
+    setCompareQuery('');
+    setCompareRole('all');
   }, [heroId]);
 
   useEffect(() => {
@@ -86,6 +111,32 @@ export function HeroDetailDrawer({
   }, [heroId, rankFilter]);
 
   useEffect(() => {
+    if (!compareHeroId || compareMode !== 'comparing') return;
+    let cancelled = false;
+    setCompareLoading(true);
+    setCompareError(null);
+
+    fetchHeroDetail(compareHeroId)
+      .then((d) => {
+        if (!cancelled) setCompareDetail(d);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCompareError(
+            err instanceof Error ? err.message : 'Unable to load comparison hero profile.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCompareLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [compareHeroId, compareMode]);
+
+  useEffect(() => {
     if (!heroId) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -103,6 +154,29 @@ export function HeroDetailDrawer({
   const rankStat = rankRecord?.data;
   const skills = heroData?.heroskilllist?.[0]?.skilllist || [];
   const abilities = heroData?.abilityshow || [];
+
+  const compareRoster = useMemo(() => {
+    const q = compareQuery.trim().toLowerCase();
+    const list: Array<{ id: number; name: string; head: string; roles: string[] }> = [];
+    for (const [id, info] of heroNameMap.entries()) {
+      if (id === heroId) continue;
+      const p = positionMap.get(id);
+      const roles = p?.roles || [];
+      if (q && !info.name.toLowerCase().includes(q)) continue;
+      if (compareRole !== 'all' && !roles.some((r) => r.includes(compareRole))) continue;
+      list.push({ id, name: info.name, head: info.head, roles });
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  }, [heroNameMap, positionMap, heroId, compareQuery, compareRole]);
+
+  const compareFallbackInfo = compareHeroId ? heroNameMap.get(compareHeroId) : undefined;
+  const compareHeroData = compareDetail?.data?.hero?.data;
+  const compareHeroName =
+    compareHeroData?.name ||
+    compareFallbackInfo?.name ||
+    (compareHeroId ? `Hero #${compareHeroId}` : '');
+  const compareHeroPortrait =
+    compareDetail?.data?.head || compareHeroData?.painting || compareFallbackInfo?.head;
 
   const matchupPayload = useMemo(() => {
     if (!heroId) return null;
@@ -124,46 +198,70 @@ export function HeroDetailDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-xs"
+      className="fixed inset-0 z-50 flex justify-end bg-black/75"
       role="dialog"
       aria-modal="true"
       aria-label={`${heroName} details`}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-[#0D131E] border-l border-slate-800 h-full overflow-y-auto p-6 sm:p-8 space-y-6"
+        className={`w-full ${
+          compareMode === 'comparing' ? 'max-w-3xl' : 'max-w-2xl'
+        } bg-[#0D131E] border-l border-slate-800 h-full overflow-y-auto p-6 sm:p-8 space-y-6 transition-[max-width] duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 min-w-0">
             <SafeImage
               src={heroPortrait}
               alt={heroName}
               fallbackText={heroName}
               size="lg"
-              className="w-16 h-16 rounded-xl border border-slate-700"
+              className="w-16 h-16 rounded-xl border border-slate-700 shrink-0"
             />
-            <div>
-              <div className="text-xs text-slate-400 capitalize">
+            <div className="min-w-0">
+              <div className="text-xs text-slate-400 capitalize truncate">
                 {pos?.roles?.join(' / ') || 'Hero'}
                 {pos?.lanes?.length ? ` · ${pos.lanes.join(' · ')}` : ''}
                 {heroData?.speciality?.length ? ` · ${heroData.speciality.join(', ')}` : ''}
               </div>
-              <h2 className="font-display text-2xl font-bold text-slate-50 mt-0.5">
+              <h2 className="font-display text-2xl font-bold text-slate-50 mt-0.5 truncate">
                 {heroName}
               </h2>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close hero details"
-            className="p-2 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (compareMode === 'off') {
+                  setCompareMode(compareHeroId ? 'comparing' : 'picking');
+                } else {
+                  setCompareMode('off');
+                }
+              }}
+              aria-pressed={compareMode !== 'off'}
+              className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-colors inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+                compareMode !== 'off'
+                  ? 'border-amber-400 bg-amber-500 text-slate-950'
+                  : 'border-slate-700 text-slate-200 hover:border-amber-400/70 hover:text-amber-300 bg-[#111827]'
+              }`}
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Compare</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close hero details"
+              className="p-2 rounded-lg border border-slate-800 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -176,6 +274,122 @@ export function HeroDetailDrawer({
           <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800/70 text-sm text-rose-200">
             {error}
           </div>
+        ) : compareMode === 'picking' ? (
+          <div className="space-y-4" data-testid="compare-hero-picker">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-base font-semibold text-slate-100">
+                  Select a Hero to Compare with {heroName}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Compare Lv. 1 & Lv. 15 base stats, per-level growth rates, and skill utility side by side.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCompareMode(compareHeroId ? 'comparing' : 'off')}
+                className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-slate-800 bg-[#111827] p-4">
+              <div className="relative">
+                <Search
+                  className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  autoFocus
+                  aria-label="Search hero to compare"
+                  placeholder="Search hero name..."
+                  value={compareQuery}
+                  onChange={(e) => setCompareQuery(e.target.value)}
+                  className="w-full pl-10 pr-3.5 py-2 text-sm rounded-lg bg-[#0B0F17] border border-slate-700 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {COMPARE_ROLES.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setCompareRole(r.id)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                      compareRole === r.id
+                        ? 'bg-amber-500 text-slate-950 font-semibold'
+                        : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {compareRoster.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-[#111827] p-8 text-center text-xs text-slate-400">
+                No heroes match your search or role filter.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {compareRoster.map((hero) => (
+                  <button
+                    key={hero.id}
+                    type="button"
+                    onClick={() => {
+                      setCompareHeroId(hero.id);
+                      setCompareMode('comparing');
+                      setCompareQuery('');
+                      setCompareRole('all');
+                    }}
+                    className="p-2.5 rounded-lg border border-slate-800 bg-[#111827] hover:border-amber-400/70 hover:bg-slate-800/70 transition-colors flex items-center gap-2.5 text-left cursor-pointer"
+                  >
+                    <SafeImage
+                      src={hero.head}
+                      alt={hero.name}
+                      fallbackText={hero.name}
+                      size="sm"
+                      className="w-9 h-9 rounded-md shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-slate-100 truncate">
+                        {hero.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 capitalize truncate">
+                        {hero.roles[0] || 'Hero'}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : compareMode === 'comparing' && compareHeroId ? (
+          <HeroComparePanel
+            primaryHero={{
+              id: heroId,
+              name: heroName,
+              portrait: heroPortrait,
+              pos,
+              detail,
+              rankRecord,
+            }}
+            compareHero={{
+              id: compareHeroId,
+              name: compareHeroName,
+              portrait: compareHeroPortrait,
+              pos: positionMap.get(compareHeroId),
+              detail: compareDetail,
+              rankRecord: heroRankMap.get(compareHeroId),
+            }}
+            loadingCompare={compareLoading}
+            compareError={compareError}
+            onChangeOpponent={() => setCompareMode('picking')}
+            onExitCompare={() => setCompareMode('off')}
+          />
         ) : (
           <>
             {/* Drawer View Tabs */}
