@@ -362,7 +362,7 @@ export function HeroComparePanel({
                 </div>
               ))}
 
-              {/* Rone Arena Ratings */}
+              {/* Hero ratings */}
               {ratingLabels.map((label, idx) => {
                 const vA = Number(primaryAbilities[idx]) || 0;
                 const vB = Number(compareAbilities[idx]) || 0;
@@ -438,7 +438,7 @@ export function HeroComparePanel({
                 Skill Utility & Cooldown Profile
               </h3>
               <span className="text-[11px] text-slate-400">
-                Parsed from live Rone Arena skill kits
+                Parsed from live hero skill data
               </span>
             </div>
 
