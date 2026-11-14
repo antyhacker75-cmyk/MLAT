@@ -35,7 +35,7 @@ export function TopNav({
           }}
           className="font-display text-lg font-bold tracking-tight text-slate-50 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-sm"
         >
-          DawnSight
+          MLAT
         </a>
 
         {/* Zone 2: Clean single-line text navigation links */}
