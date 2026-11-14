@@ -131,9 +131,15 @@ async function handleApi(request: Request, env: Env): Promise<Response> {
       try {
         data = JSON.parse(raw);
       } catch {
-        const stale = upstream.status >= 500 ? sendStale() : null;
+        const stale = sendStale();
         if (stale) return stale;
         return json({ code: 502, message: 'Upstream API returned invalid JSON.' }, 502);
+      }
+
+      if (data === null || data === undefined) {
+        const stale = sendStale();
+        if (stale) return stale;
+        return json({ code: 502, message: 'Upstream API returned an empty JSON response.' }, 502);
       }
 
       if (!upstream.ok && upstream.status >= 500) {
